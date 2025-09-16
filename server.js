@@ -2,7 +2,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const app = require("./app");
-
+console.log("server is using app module at:", require.resolve("./app"));
 const { MONGODB_URI, PORT = 3000 } = process.env;
 
 (async () => {

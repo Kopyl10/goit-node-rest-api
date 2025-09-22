@@ -3,7 +3,21 @@ const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 
 const { JWT_SECRET = "dev-secret", JWT_EXPIRES_IN = "24h" } = process.env;
+async function register(req, res) {
+  const { email, password } = req.body;
 
+  const existing = await User.findOne({ email });
+  if (existing) {
+    return res.status(409).json({ message: "Email in use" });
+  }
+
+  const hash = await bcrypt.hash(password, 10);
+  const user = await User.create({ email, password: hash });
+
+  return res.status(201).json({
+    user: { email: user.email, subscription: user.subscription },
+  });
+}
 async function login(req, res) {
   const { email, password } = req.body;
 
@@ -38,4 +52,4 @@ async function getCurrent(req, res) {
   return res.status(200).json({ email, subscription });
 }
 
-module.exports = { login, logout, getCurrent };
+module.exports = { register, login, logout, getCurrent };

@@ -18,6 +18,7 @@ async function login(req, res) {
   const token = jwt.sign({ id: user._id }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
   });
+
   user.token = token;
   await user.save();
 
@@ -26,3 +27,15 @@ async function login(req, res) {
     user: { email: user.email, subscription: user.subscription },
   });
 }
+async function logout(req, res) {
+  const { _id } = req.user;
+  await User.findByIdAndUpdate(_id, { token: null });
+  return res.status(204).send();
+}
+
+async function getCurrent(req, res) {
+  const { email, subscription } = req.user;
+  return res.status(200).json({ email, subscription });
+}
+
+module.exports = { login, logout, getCurrent };

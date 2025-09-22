@@ -4,6 +4,7 @@ const morgan = require("morgan");
 const cors = require("cors");
 console.log("loaded app.js from:", __filename);
 const contactsRouter = require("./routes/api/contacts.js");
+const usersRouter = require("./routes/api/users.js");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(express.json());
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.json({ ok: true, service: "contacts-api" }));
+app.use("/api/users", usersRouter);
 app.use("/api/contacts", contactsRouter);
 
 app.use((req, res) => res.status(404).json({ message: "Not found" }));

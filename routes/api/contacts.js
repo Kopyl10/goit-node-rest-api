@@ -8,6 +8,8 @@ const {
 } = require("../../schemas/contacts");
 
 const router = express.Router();
+const auth = require("../../middlewares/auth");
+router.use(auth);
 
 router.get("/", ctrl.getAll);
 router.get("/:contactId", ctrl.getById);

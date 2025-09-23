@@ -6,7 +6,8 @@ const isValidId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 exports.getAll = async (req, res, next) => {
   try {
-    const contacts = await Contact.find();
+    const { _id: owner } = req.user;
+    const contacts = await Contact.find({ owner });
     res.json(contacts);
   } catch (e) {
     next(e);
@@ -18,8 +19,11 @@ exports.getById = async (req, res, next) => {
     const { contactId } = req.params;
     if (!isValidId(contactId))
       return res.status(404).json({ message: "Not found" });
-    const doc = await Contact.findById(contactId);
+
+    const { _id: owner } = req.user;
+    const doc = await Contact.findOne({ _id: contactId, owner });
     if (!doc) return res.status(404).json({ message: "Not found" });
+
     res.json(doc);
   } catch (e) {
     next(e);
@@ -28,7 +32,8 @@ exports.getById = async (req, res, next) => {
 
 exports.createOne = async (req, res, next) => {
   try {
-    const doc = await Contact.create(req.body);
+    const { _id: owner } = req.user;
+    const doc = await Contact.create({ ...req.body, owner });
     res.status(201).json(doc);
   } catch (e) {
     next(e);
@@ -40,9 +45,14 @@ exports.updateById = async (req, res, next) => {
     const { contactId } = req.params;
     if (!isValidId(contactId))
       return res.status(404).json({ message: "Not found" });
-    const updated = await Contact.findByIdAndUpdate(contactId, req.body, {
-      new: true,
-    });
+
+    const { _id: owner } = req.user;
+    const updated = await Contact.findOneAndUpdate(
+      { _id: contactId, owner },
+      req.body,
+      { new: true }
+    );
+
     if (!updated) return res.status(404).json({ message: "Not found" });
     res.json(updated);
   } catch (e) {
@@ -55,7 +65,10 @@ exports.removeById = async (req, res, next) => {
     const { contactId } = req.params;
     if (!isValidId(contactId))
       return res.status(404).json({ message: "Not found" });
-    const removed = await Contact.findByIdAndDelete(contactId);
+
+    const { _id: owner } = req.user;
+    const removed = await Contact.findOneAndDelete({ _id: contactId, owner });
+
     if (!removed) return res.status(404).json({ message: "Not found" });
     res.json({ message: "contact deleted" });
   } catch (e) {
@@ -74,8 +87,9 @@ exports.updateStatusContact = async (req, res, next) => {
       return res.status(400).json({ message: "missing field favorite" });
     }
 
-    const updated = await Contact.findByIdAndUpdate(
-      contactId,
+    const { _id: owner } = req.user;
+    const updated = await Contact.findOneAndUpdate(
+      { _id: contactId, owner },
       { favorite: !!favorite },
       { new: true }
     );

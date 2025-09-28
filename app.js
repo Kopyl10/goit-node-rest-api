@@ -12,6 +12,8 @@ app.use(morgan("dev"));
 app.use(cors());
 app.use(express.json());
 
+app.use(express.static("public"));
+
 app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.json({ ok: true, service: "contacts-api" }));
 app.use("/api/users", usersRouter);

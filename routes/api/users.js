@@ -12,6 +12,6 @@ router.get("/current", auth, (req, res) => {
   res.json({ email, subscription, avatarURL });
 });
 
-router.patch("/avatars", auth, upload.single("avatar"), updateAvatar);
+router.patch("/avatar", auth, upload.single("avatar"), updateAvatar);
 
 module.exports = router;

@@ -43,6 +43,11 @@ const signup = async (req, res, next) => {
 const updateAvatar = async (req, res, next) => {
   try {
     const { _id } = req.user;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Avatar file is required" });
+    }
+
     const { path: tmpPath } = req.file;
 
     const image = await Jimp.read(tmpPath);
@@ -53,7 +58,7 @@ const updateAvatar = async (req, res, next) => {
 
     await fs.rename(tmpPath, finalPath);
 
-    const avatarURL = `/avatars/${filename}`;
+    const avatarURL = path.posix.join("/avatars", filename);
 
     await User.findByIdAndUpdate(_id, { avatarURL });
 
@@ -62,6 +67,7 @@ const updateAvatar = async (req, res, next) => {
     next(err);
   }
 };
+
 const jwt = require("jsonwebtoken");
 const { JWT_SECRET } = process.env;
 

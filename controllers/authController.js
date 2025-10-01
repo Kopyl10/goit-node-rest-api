@@ -93,5 +93,39 @@ async function verifyEmail(req, res) {
 
   return res.status(200).json({ message: "Verification successful" });
 }
+async function resendVerificationEmail(req, res) {
+  const { email } = req.body;
 
-module.exports = { register, login, logout, getCurrent, verifyEmail };
+  if (!email) {
+    return res.status(400).json({ message: "missing required field email" });
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (user.verify) {
+    return res
+      .status(400)
+      .json({ message: "Verification has already been passed" });
+  }
+
+  if (!user.verificationToken) {
+    user.verificationToken = nanoid();
+    await user.save();
+  }
+
+  await sendVerificationEmail(user.email, user.verificationToken);
+
+  return res.status(200).json({ message: "Verification email sent" });
+}
+
+module.exports = {
+  register,
+  login,
+  logout,
+  getCurrent,
+  verifyEmail,
+  resendVerificationEmail,
+};

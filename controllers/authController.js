@@ -1,10 +1,13 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const User = require("../models/user");
+const { nanoid } = require("nanoid");
+const { sendVerificationEmail } = require("../services/emailService");
 
 const { JWT_SECRET = "dev-secret", JWT_EXPIRES_IN = "24h" } = process.env;
+
 async function register(req, res) {
-  const { email, password } = req.body;
+  const { email, password, subscription } = req.body;
 
   const existing = await User.findOne({ email });
   if (existing) {
@@ -12,12 +15,32 @@ async function register(req, res) {
   }
 
   const hash = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, password: hash });
+  const verificationToken = nanoid();
+
+  const user = await User.create({
+    email,
+    password: hash,
+    subscription: subscription || "starter",
+    token: null,
+    verify: false,
+    verificationToken,
+  });
+
+  try {
+    await sendVerificationEmail(email, verificationToken);
+  } catch (e) {
+    console.error(
+      "Send verification email failed:",
+      e?.response?.body || e.message
+    );
+  }
 
   return res.status(201).json({
     user: { email: user.email, subscription: user.subscription },
+    message: "User created. Verification email sent.",
   });
 }
+
 async function login(req, res) {
   const { email, password } = req.body;
 
@@ -28,6 +51,10 @@ async function login(req, res) {
   const ok = await bcrypt.compare(password, user.password);
   if (!ok)
     return res.status(401).json({ message: "Email or password is wrong" });
+
+  if (!user.verify) {
+    return res.status(401).json({ message: "Email is not verified" });
+  }
 
   const token = jwt.sign({ id: user._id }, JWT_SECRET, {
     expiresIn: JWT_EXPIRES_IN,
@@ -41,6 +68,7 @@ async function login(req, res) {
     user: { email: user.email, subscription: user.subscription },
   });
 }
+
 async function logout(req, res) {
   const { _id } = req.user;
   await User.findByIdAndUpdate(_id, { token: null });
@@ -51,5 +79,19 @@ async function getCurrent(req, res) {
   const { email, subscription } = req.user;
   return res.status(200).json({ email, subscription });
 }
+async function verifyEmail(req, res) {
+  const { verificationToken } = req.params;
 
-module.exports = { register, login, logout, getCurrent };
+  const user = await User.findOne({ verificationToken });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  user.verify = true;
+  user.verificationToken = null;
+  await user.save();
+
+  return res.status(200).json({ message: "Verification successful" });
+}
+
+module.exports = { register, login, logout, getCurrent, verifyEmail };

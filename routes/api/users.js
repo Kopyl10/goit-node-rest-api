@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const { verifyEmail } = require("../../controllers/authController");
 
 const { signup, login, updateAvatar } = require("../../controllers/users");
 const auth = require("../../middlewares/auth");
@@ -13,5 +14,6 @@ router.get("/current", auth, (req, res) => {
 });
 
 router.patch("/avatar", auth, upload.single("avatar"), updateAvatar);
+router.get("/verify/:verificationToken", verifyEmail);
 
 module.exports = router;

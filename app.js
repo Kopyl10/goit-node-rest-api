@@ -16,6 +16,7 @@ app.use(express.static("public"));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 app.get("/", (req, res) => res.json({ ok: true, service: "contacts-api" }));
+app.use("/users", usersRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/contacts", contactsRouter);
 
